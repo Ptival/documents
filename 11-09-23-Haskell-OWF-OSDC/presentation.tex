@@ -1,0 +1,521 @@
+\documentclass[10pt]{beamer}
+\usepackage[frenchb]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{ucs}
+\usetheme{Madrid}
+
+\title[Haskell]{Être paresseux avec classe\\
+Une introduction à la programmation fonctionnelle en Haskell}
+\author{Valentin Robert}
+\institute{INRIA}
+\date{\today}
+
+\begin{document}
+
+
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Qu'est-ce qu'Haskell ?}
+
+\begin{block}
+{Programmation fonctionnelle pure (par défaut)}
+\begin{itemize}
+\item Définitions plus mathématiques qu'opérationnelles
+\item Fonctions d'ordre supérieur
+\item Transparence référentielle
+\end{itemize}
+\end{block}
+
+\begin{block}
+{Évaluation paresseuse}
+\begin{itemize}
+\item Structures de données infinies
+\end{itemize}
+\end{block}
+
+\begin{block}
+{Typage statique}
+\begin{itemize}
+\item Types connus à la compilation
+\item Inférence de types
+\item Polymorphisme paramétrique ("templates", "generics", ...)
+\item Polymorphisme ad-hoc ("surcharge")
+\end{itemize}
+\end{block}
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Et également...}
+
+Haskell est aussi un terrain d'expérimentation.
+
+\begin{itemize}
+\item Modules (modularité et encapsulation fine)
+\item Monades, foncteurs applicatifs, flèches...
+\item Entrées/sorties monadiques
+\item Mémoire transactionnelle logicielle monadique
+\item Parallélisme de données
+\item Interface étrangère de fonctions
+\item Extensions du système de types
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Mais tout n'est pas rose}
+\begin{block}
+{Évaluation paresseuse}
+L'évaluation paresseuse est complexe et rend les programmes plus compliqués à
+analyser en termes de nécessité mémoire.
+\end{block}
+\begin{block}
+{Messages d'erreur}
+La généralité du système de types rend parfois les messages d'erreurs d'Haskell
+assez ésotériques (de moins en moins vrai).
+\end{block}
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Typage statique}
+\begin{block}
+{Enjeux}
+\begin{itemize}
+\item Détecter les erreurs à la compilation
+\item Sûreté des types
+\item Rester agréable (éviter les fardeaux syntaxiques, promouvoir la
+modularité et la réutilisabilité)
+\item Éviter les faux positifs, les faux négatifs
+\item Opportunités d'optimisation
+\end{itemize}
+\end{block}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Typage statique}
+En Haskell toutes les valeurs sont typées.
+\begin{verbatim}
+ghci> :t 'a'
+'a' :: Char
+
+ghci> :t True
+True :: Bool
+
+ghci> :t "HELLO!"
+"HELLO!" :: [Char]
+
+ghci> :t 4 == 5
+4 == 5 :: Bool
+\end{verbatim}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Typage statique}
+Les fonctions (et opérateurs) sont aussi des valeurs !
+\begin{verbatim}
+:t isAscii
+isAscii :: Char → Bool
+
+:t not
+not :: Bool → Bool
+
+:t (&&)
+(&&) :: Bool → Bool → Bool
+\end{verbatim}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Curryfication}
+
+En Haskell, les fonctions sont curryfiées : une fonction qui attend \emph{n}
+arguments est en fait une fonction qui attend \emph{1} argument et renvoie une
+nouvelle fonction (ou \textbf{fermeture}) qui attend \emph{n - 1} arguments.
+
+\begin{theorem}
+\verb|a → b → c| ≡ \verb|a → (b → c)|
+\end{theorem}
+
+\begin{block}
+{Attention !}
+\verb|a → b → c| ≢ \verb|(a → b) → c|
+\end{block}
+
+On peut appliquer partiellement des fonctions pour créer de nouvelles
+fonctions.
+
+\begin{verbatim}
+doubleList = map (* 2)
+takePositives = takeWhile (> 0)
+
+ghci> doubleList [1, 2, 3]
+[2, 4, 6]
+ghci> takePositives [10, 9..]
+[10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+\end{verbatim}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Polymorphisme paramétrique}
+\begin{block}
+{Types de données paramétrés}
+\begin{verbatim}
+data Maybe a = | Nothing
+               | Just a
+
+data List a = | Empty
+              | a `Cons` List a
+\end{verbatim}
+\end{block}
+\begin{block}
+{Fonctions polymorphes}
+\begin{verbatim}
+ghci> :t Just
+Just :: a → Maybe a
+
+ghci> :t (:)
+(:) :: a → [a] → [a]
+\end{verbatim}
+\end{block}
+Le type est en réalité : \verb|Just :: ∀a. a → Maybe a|
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Polymorphisme ad-hoc : classes de types}
+\begin{block}
+{Fonctions surchargées}
+\begin{verbatim}
+ghci> :t (==)
+(==) :: Eq a ⇒ a → a → Bool
+
+ghci> :t (+)
+(+) :: Num a ⇒ a → a → a
+
+ghci> :t show
+show :: Show a ⇒ a → String
+\end{verbatim}
+\end{block}
+\begin{block}
+{Constantes surchargées}
+\begin{verbatim}
+ghci> :t 1
+1 :: Num a ⇒ a
+\end{verbatim}
+\end{block}
+Surcharge résolue à la compilation !
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Polymorphisme ad-hoc : classes de types}
+\begin{block}
+{Quelques exemples de classes de types de la bibliothèque standard}
+\begin{itemize}
+
+\item Eq : tous les types testables pour l'égalité
+
+\verb|(==), (/=)|
+
+\item Ord : tous les types ordonnables (et donc comparables)
+
+\verb|(<), (>=), (>), (<=), max, min|
+
+\item Num : tous les types numériques
+
+\verb|(+), (*), (-), negate, abs, ...|
+
+\item Show : tous les types affichables
+
+\verb|show :: a → String, ...|
+
+\item Read : tous les types parsables à partir d'une liste de caractères
+
+\verb|read :: String → a, ...|
+
+\end{itemize}
+\end{block}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Inférence de types}
+Il est parfois énervant de spécifier le type de chaque expression. En Haskell,
+pas besoin, l'inférence de types peut trouver le type d'une expression la
+plupart du temps.
+
+\begin{verbatim}
+fact 0 = 1
+fact n = n * fact(n-1)
+
+ghci> :t fact
+fact :: (Num a) ⇒ a → a
+\end{verbatim}
+
+Haskell infère le type le plus général !
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Déclaration d'une classe de type et d'instances de la classe}
+\begin{verbatim}
+class Eq a where
+    (==) :: a → a → Bool
+    (/=) :: a → a → Bool
+    x == y = not (x /= y)
+    x /= y = not (x == y)
+
+data Color = Red | Green | Blue
+    deriving (Eq)
+
+instance Read Color where
+    read "R" = Red
+    read "G" = Green
+    read "B" = Blue
+
+listColors = map read "RGB"
+
+ghci> listColors
+[Red, Green, Blue]
+\end{verbatim}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Polymorphisme d'ordre supérieur}
+\begin{verbatim}
+class Functor f where
+    fmap :: (a → b) → f a → f b
+\end{verbatim}
+
+\verb|f| n'est pas un type, mais un constructeur de types !
+
+\begin{verbatim}
+instance Functor [] where
+    fmap = map
+
+instance Functor Maybe where
+    fmap f (Just x) = Just (f x)
+    fmap f Nothing = Nothing
+\end{verbatim}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Les actions IO}
+\begin{block}
+{Contraindre les effets de bord hors du royaume de la pureté}
+Haskell est pur par défaut, comment peut-on effectuer quoi que ce soit
+d'intéressant ?
+
+\verb|data IO a = IO a|
+
+Ce type représente une action qui, lorsqu'elle sera effectuée par Haskell,
+produira une valeur de type a.
+\end{block}
+
+\begin{block}
+{IO est tachant et inlavable}
+1) Le module IO n'exporte pas le constructeur de valeurs IO !
+
+2) Il n'existe pas de fonction ayant pour type \verb|IO a → a|.
+
+3) Mais il existe une fonction \verb|(>>=) :: IO a → (a → IO b) → IO b|.
+
+Ainsi, un terme qui est né d'une IO est forcément marqué IO !
+\end{block}
+
+De plus, un programme Haskell doit avoir pour type \verb|IO ()|.
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Les actions IO}
+\begin{verbatim}
+ghci> :t (>>=)
+(>>=) :: Monad m => m a → (a → m b) → m b
+-- Pensez plutôt à IO a → (a → IO b) → IO b
+
+ghci> :t getLine
+getLine :: IO String
+
+ghci> :t readFile
+readFile :: String → IO String
+
+ghci> :t putStr
+putStr :: String → IO ()
+
+printFile = getLine >>= readFile >>= putStr
+
+ghci> :t printFile
+printFile :: IO ()
+\end{verbatim}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Les actions IO}
+Plus généralement :
+\begin{verbatim}
+printFile = getLine    >>= (\l →
+            readFile l >>= (\f →
+            putStr f
+            ))
+\end{verbatim}
+
+Ceci étant très utilisé en Haskell, on définit une syntaxe plus agréable :
+
+\begin{verbatim}
+printFile = do fileName     <- getLine
+               fileContents <- readFile fileName
+               putStr fileContents
+\end{verbatim}
+
+On dirait presque de l'impératif !
+
+On peut en quelque sorte surcharger "=" et ";" !
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{La star des classes de types}
+\begin{verbatim}
+class Monad m where
+    return :: a → m a
+
+    (>>=) :: m a → (a → m b) → m b
+
+    (>>) :: m a → m b → m b
+    x >> y = x >>= \_ → y
+
+    fail :: String → m a
+    fail msg = error msg
+\end{verbatim}
+
+Ainsi que des lois précisant ce qu'on attend de ces opérations.
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Ce qui a l'air séquentiel ne l'est pas forcément !}
+\begin{verbatim}
+cartesianProduct l1 l2 =
+    do x <- l1
+       y <- l2
+       return (x, y)
+
+ghci> cartesianProduct [1, 2, 3, 4] [True, False]
+[(1,True),(1,False),(2,True),(2,False),(3,True),(3,False)]
+\end{verbatim}
+
+Avez-vous déjà défini des listes en compréhension ?
+
+\pause
+
+En Haskell, le code précédent est (presque) équivalent à :
+
+\begin{verbatim}
+cartesianProduct' l1 l2 = [(x, y) | x <- l1, y <- l2]
+\end{verbatim}
+
+Rien de bien effrayant, si ?
+
+\pause
+
+\begin{verbatim}
+ghci> :t cartesianProduct
+cartesianProduct :: Monad m => m t → m t1 → m (t, t1)
+\end{verbatim}
+
+Ça commence à faire peur...
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Exemple de structure d'un programme Haskell}
+\begin{verbatim}
+main = forever $ do input <- performInput
+                    let output = transform input
+                    performOutput output
+\end{verbatim}
+
+\verb|main :: IO ()| est une action composée par des sous-actions.
+
+\verb|performInput :: IO a|
+
+\verb|transform :: a → b| est une transformation pure !
+
+\verb|performOutput :: b → IO ()|
+
+\pause
+
+\begin{verbatim}
+forever :: (Monad m) => m a → m b
+forever a = a >> forever a
+\end{verbatim}
+
+Drôle de bête !
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Exemple de possibilités de programme}
+\begin{verbatim}
+main = do byteString <- B.readFile "/dev/urandom"
+          let string = C.unpack byteString
+          putStrLn (take 10 (filter isAlphaNum string))
+\end{verbatim}
+
+Paresse en (in-)action !
+
+\verb|unpack :: ByteString → String| est une fonction pure !
+
+\begin{verbatim}
+ghci> main
+ZwBÛAãÅWóÕ
+ghci> main
+Fh0iXXïZìæ
+\end{verbatim}
+\end{frame}
+
+
+
+\begin{frame}
+\centerline{Question time!}
+\end{frame}
+
+
+
+\end{document}
