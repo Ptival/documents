@@ -3,9 +3,11 @@
 \usepackage[utf8]{inputenc}
 \usepackage{ucs}
 \usetheme{Madrid}
+\usepackage{amsmath,amssymb}
+\newtheorem{thrm}{Théorème}
 
 \title[Haskell]{Être paresseux avec classe\\
-Une introduction à la programmation fonctionnelle en Haskell}
+Une introduction à la programmation fonctionnelle pure en Haskell}
 \author{Valentin Robert}
 \institute{INRIA}
 \date{\today}
@@ -32,12 +34,16 @@ Une introduction à la programmation fonctionnelle en Haskell}
 \end{itemize}
 \end{block}
 
+\pause
+
 \begin{block}
 {Évaluation paresseuse}
 \begin{itemize}
 \item Structures de données infinies
 \end{itemize}
 \end{block}
+
+\pause
 
 \begin{block}
 {Typage statique}
@@ -47,40 +53,6 @@ Une introduction à la programmation fonctionnelle en Haskell}
 \item Polymorphisme paramétrique ("templates", "generics", ...)
 \item Polymorphisme ad-hoc ("surcharge")
 \end{itemize}
-\end{block}
-\end{frame}
-
-
-
-\begin{frame}
-\frametitle{Et également...}
-
-Haskell est aussi un terrain d'expérimentation.
-
-\begin{itemize}
-\item Modules (modularité et encapsulation fine)
-\item Monades, foncteurs applicatifs, flèches...
-\item Entrées/sorties monadiques
-\item Mémoire transactionnelle logicielle monadique
-\item Parallélisme de données
-\item Interface étrangère de fonctions
-\item Extensions du système de types
-\end{itemize}
-\end{frame}
-
-
-
-\begin{frame}
-\frametitle{Mais tout n'est pas rose}
-\begin{block}
-{Évaluation paresseuse}
-L'évaluation paresseuse est complexe et rend les programmes plus compliqués à
-analyser en termes de nécessité mémoire.
-\end{block}
-\begin{block}
-{Messages d'erreur}
-La généralité du système de types rend parfois les messages d'erreurs d'Haskell
-assez ésotériques (de moins en moins vrai).
 \end{block}
 \end{frame}
 
@@ -142,33 +114,52 @@ not :: Bool → Bool
 
 \begin{frame}[fragile]
 \frametitle{Curryfication}
-
-En Haskell, les fonctions sont curryfiées : une fonction qui attend \emph{n}
-arguments est en fait une fonction qui attend \emph{1} argument et renvoie une
-nouvelle fonction (ou \textbf{fermeture}) qui attend \emph{n - 1} arguments.
-
-\begin{theorem}
+\begin{thrm}
 \verb|a → b → c| ≡ \verb|a → (b → c)|
-\end{theorem}
+\end{thrm}
+
+\pause
 
 \begin{block}
 {Attention !}
 \verb|a → b → c| ≢ \verb|(a → b) → c|
 \end{block}
 
-On peut appliquer partiellement des fonctions pour créer de nouvelles
-fonctions.
+\pause
 
+\begin{block}
+{Application partielle}
 \begin{verbatim}
-doubleList = map (* 2)
 takePositives = takeWhile (> 0)
 
-ghci> doubleList [1, 2, 3]
-[2, 4, 6]
+ghci> :t takeWhile
+takeWhile :: (a → Bool) → [a] → [a]
+
+ghci> :t takePos
+takePositives :: [Integer] → [Integer]
+
 ghci> takePositives [10, 9..]
 [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 \end{verbatim}
+\end{block}
+\end{frame}
 
+
+
+\begin{frame}[fragile]
+\frametitle{Fonctions anonymes}
+\begin{verbatim}
+squareList = map (\x → x * x)
+
+ghci> :t map
+map :: (a → b) → [a] → [b]
+
+ghci> :t squareList
+squareList :: [Integer] → [Integer]
+
+ghci> squareList [1, 2, 3]
+[1, 4, 9]
+\end{verbatim}
 \end{frame}
 
 
@@ -261,13 +252,10 @@ Surcharge résolue à la compilation !
 
 \begin{frame}[fragile]
 \frametitle{Inférence de types}
-Il est parfois énervant de spécifier le type de chaque expression. En Haskell,
-pas besoin, l'inférence de types peut trouver le type d'une expression la
-plupart du temps.
 
 \begin{verbatim}
 fact 0 = 1
-fact n = n * fact(n-1)
+fact n = n * fact (n-1)
 
 ghci> :t fact
 fact :: (Num a) ⇒ a → a
@@ -284,9 +272,14 @@ Haskell infère le type le plus général !
 class Eq a where
     (==) :: a → a → Bool
     (/=) :: a → a → Bool
+\end{verbatim}
+\pause
+\begin{verbatim}
     x == y = not (x /= y)
     x /= y = not (x == y)
-
+\end{verbatim}
+\pause
+\begin{verbatim}
 data Color = Red | Green | Blue
     deriving (Eq)
 
@@ -294,10 +287,10 @@ instance Read Color where
     read "R" = Red
     read "G" = Green
     read "B" = Blue
-
-listColors = map read "RGB"
-
-ghci> listColors
+\end{verbatim}
+\pause
+\begin{verbatim}
+ghci> map read "RGB"
 [Red, Green, Blue]
 \end{verbatim}
 \end{frame}
@@ -358,7 +351,7 @@ De plus, un programme Haskell doit avoir pour type \verb|IO ()|.
 \frametitle{Les actions IO}
 \begin{verbatim}
 ghci> :t (>>=)
-(>>=) :: Monad m => m a → (a → m b) → m b
+(>>=) :: Monad m ⇒ m a → (a → m b) → m b
 -- Pensez plutôt à IO a → (a → IO b) → IO b
 
 ghci> :t getLine
@@ -409,14 +402,8 @@ On peut en quelque sorte surcharger "=" et ";" !
 \begin{verbatim}
 class Monad m where
     return :: a → m a
-
     (>>=) :: m a → (a → m b) → m b
-
-    (>>) :: m a → m b → m b
-    x >> y = x >>= \_ → y
-
-    fail :: String → m a
-    fail msg = error msg
+    -- ...
 \end{verbatim}
 
 Ainsi que des lois précisant ce qu'on attend de ces opérations.
@@ -452,7 +439,7 @@ Rien de bien effrayant, si ?
 
 \begin{verbatim}
 ghci> :t cartesianProduct
-cartesianProduct :: Monad m => m t → m t1 → m (t, t1)
+cartesianProduct :: Monad m ⇒ m t → m t1 → m (t, t1)
 \end{verbatim}
 
 Ça commence à faire peur...
@@ -480,7 +467,7 @@ main = forever $ do input <- performInput
 \pause
 
 \begin{verbatim}
-forever :: (Monad m) => m a → m b
+forever :: (Monad m) ⇒ m a → m b
 forever a = a >> forever a
 \end{verbatim}
 
