@@ -40,6 +40,7 @@ Une introduction à la programmation fonctionnelle pure en Haskell}
 {Évaluation paresseuse}
 \begin{itemize}
 \item Structures de données infinies
+\item Entrées/Sorties paresseuses
 \end{itemize}
 \end{block}
 
@@ -65,8 +66,7 @@ Une introduction à la programmation fonctionnelle pure en Haskell}
 \begin{itemize}
 \item Détecter les erreurs à la compilation
 \item Sûreté des types
-\item Rester agréable (éviter les fardeaux syntaxiques, promouvoir la
-modularité et la réutilisabilité)
+\item Souplesse, modularité, réutilisabilité
 \item Éviter les faux positifs, les faux négatifs
 \item Opportunités d'optimisation
 \end{itemize}
@@ -224,25 +224,15 @@ Surcharge résolue à la compilation !
 {Quelques exemples de classes de types de la bibliothèque standard}
 \begin{itemize}
 
-\item Eq : tous les types testables pour l'égalité
+\item Eq : \verb|(==), (/=)|
 
-\verb|(==), (/=)|
+\item Ord : \verb|(<), (>=), (>), (<=), max, min|
 
-\item Ord : tous les types ordonnables (et donc comparables)
+\item Num : \verb|(+), (*), (-), negate, abs, ...|
 
-\verb|(<), (>=), (>), (<=), max, min|
+\item Show : \verb|show :: a → String, ...|
 
-\item Num : tous les types numériques
-
-\verb|(+), (*), (-), negate, abs, ...|
-
-\item Show : tous les types affichables
-
-\verb|show :: a → String, ...|
-
-\item Read : tous les types parsables à partir d'une liste de caractères
-
-\verb|read :: String → a, ...|
+\item Read : \verb|read :: String → a, ...|
 
 \end{itemize}
 \end{block}
@@ -254,11 +244,11 @@ Surcharge résolue à la compilation !
 \frametitle{Inférence de types}
 
 \begin{verbatim}
-fact 0 = 1
-fact n = n * fact (n-1)
+fact 0 = 1                  -- 1 :: Num a => a
+fact n = n * fact (n-1)     -- (*) :: Num a => a -> a -> a
 
 ghci> :t fact
-fact :: (Num a) ⇒ a → a
+fact :: Num a ⇒ a → a
 \end{verbatim}
 
 Haskell infère le type le plus général !
@@ -297,19 +287,63 @@ ghci> map read "RGB"
 
 
 
+
+\begin{frame}[fragile]
+\frametitle{Classes de types en action}
+
+\verb|[1, 2, 3]| représente \verb|3*x² + 2*x + 1|
+
+\begin{verbatim}
+instance Num a => Num [a] where
+    (f:fs) + (g:gs) = f+g : fs+gs
+    fs + [] = fs
+    [] + gs = gs
+\end{verbatim}
+\pause
+\begin{verbatim}
+    (f:fs) * (g:gs) = f*g : [f]*gs + fs*(g:gs)
+    _ * _ = []
+\end{verbatim}
+\pause
+\begin{verbatim}
+    ...
+\end{verbatim}
+
+Surcharge automatique :
+
+\begin{verbatim}
+ghci> [1, 1] ^ 2
+[1, 2, 1]
+\end{verbatim}
+
+\pause
+
+Voire :
+
+\begin{verbatim}
+ghci> (read "x + 1" :: [a]) ^ 2
+x^2 + x + 1
+\end{verbatim}
+
+\end{frame}
+
+
+
 \begin{frame}[fragile]
 \frametitle{Polymorphisme d'ordre supérieur}
 \begin{verbatim}
 class Functor f where
     fmap :: (a → b) → f a → f b
 \end{verbatim}
-
+\pause
 \verb|f| n'est pas un type, mais un constructeur de types !
-
+\pause
 \begin{verbatim}
 instance Functor [] where
     fmap = map
-
+\end{verbatim}
+\pause
+\begin{verbatim}
 instance Functor Maybe where
     fmap f (Just x) = Just (f x)
     fmap f Nothing = Nothing
@@ -322,27 +356,44 @@ instance Functor Maybe where
 \frametitle{Les actions IO}
 \begin{block}
 {Contraindre les effets de bord hors du royaume de la pureté}
-Haskell est pur par défaut, comment peut-on effectuer quoi que ce soit
-d'intéressant ?
 
-\verb|data IO a = IO a|
+Sans I/O, pas d'effets, que des maths !
 
-Ce type représente une action qui, lorsqu'elle sera effectuée par Haskell,
-produira une valeur de type a.
+\pause
+
+Avec I/O, pas de transparence référentielle, tout tombe à l'eau !
+
+\pause
+
+\verb|data IO a = RealWorld -> (a, RealWorld)|
+
 \end{block}
+
+\pause
 
 \begin{block}
-{IO est tachant et inlavable}
-1) Le module IO n'exporte pas le constructeur de valeurs IO !
+{Sûreté ?}
 
-2) Il n'existe pas de fonction ayant pour type \verb|IO a → a|.
+\begin{itemize}
 
-3) Mais il existe une fonction \verb|(>>=) :: IO a → (a → IO b) → IO b|.
+\item Non forgeable
 
-Ainsi, un terme qui est né d'une IO est forcément marqué IO !
+\pause
+
+\item Inlavable (aucune fonction n'a pour type \verb|IO a → a|).
+
+\pause
+
+\item Mais composable ! \verb|(>>=) :: IO a → (a → IO b) → IO b|.
+
+\end{itemize}
+
+IO un jour, IO toujours.
+
 \end{block}
 
-De plus, un programme Haskell doit avoir pour type \verb|IO ()|.
+\verb|main :: IO ()|
+
 \end{frame}
 
 
@@ -353,7 +404,9 @@ De plus, un programme Haskell doit avoir pour type \verb|IO ()|.
 ghci> :t (>>=)
 (>>=) :: Monad m ⇒ m a → (a → m b) → m b
 -- Pensez plutôt à IO a → (a → IO b) → IO b
-
+\end{verbatim}
+\pause
+\begin{verbatim}
 ghci> :t getLine
 getLine :: IO String
 
@@ -362,7 +415,9 @@ readFile :: String → IO String
 
 ghci> :t putStr
 putStr :: String → IO ()
-
+\end{verbatim}
+\pause
+\begin{verbatim}
 printFile = getLine >>= readFile >>= putStr
 
 ghci> :t printFile
@@ -374,39 +429,35 @@ printFile :: IO ()
 
 \begin{frame}[fragile]
 \frametitle{Les actions IO}
-Plus généralement :
+
+Rappel : \verb|(>>=) :: Monad m ⇒ m a → (a → m b) → m b|
+
 \begin{verbatim}
-printFile = getLine    >>= (\l →
-            readFile l >>= (\f →
-            putStr f
-            ))
+main = getLine                    >>= (\fileName ->
+       doesFileExist fileName     >>= (\fileExists ->
+       if fileExists
+       then (
+                readFile fileName >>= (\fileContents ->
+                putStrLn fileContents)
+            )
+       else putStrLn "File not found!"))
 \end{verbatim}
 
-Ceci étant très utilisé en Haskell, on définit une syntaxe plus agréable :
+\pause
+
+Sucre syntaxique :
 
 \begin{verbatim}
 printFile = do fileName     <- getLine
-               fileContents <- readFile fileName
-               putStr fileContents
+               fileExists   <- doesFileExist fileName
+               if fileExists
+               then do fileContents <- readFile fileName
+                       putStrLn fileContents
+               else putStrLn "File not found!"
 \end{verbatim}
-
-On dirait presque de l'impératif !
 
 On peut en quelque sorte surcharger "=" et ";" !
-\end{frame}
 
-
-
-\begin{frame}[fragile]
-\frametitle{La star des classes de types}
-\begin{verbatim}
-class Monad m where
-    return :: a → m a
-    (>>=) :: m a → (a → m b) → m b
-    -- ...
-\end{verbatim}
-
-Ainsi que des lois précisant ce qu'on attend de ces opérations.
 \end{frame}
 
 
@@ -423,17 +474,11 @@ ghci> cartesianProduct [1, 2, 3, 4] [True, False]
 [(1,True),(1,False),(2,True),(2,False),(3,True),(3,False)]
 \end{verbatim}
 
-Avez-vous déjà défini des listes en compréhension ?
-
 \pause
-
-En Haskell, le code précédent est (presque) équivalent à :
 
 \begin{verbatim}
 cartesianProduct' l1 l2 = [(x, y) | x <- l1, y <- l2]
 \end{verbatim}
-
-Rien de bien effrayant, si ?
 
 \pause
 
@@ -441,8 +486,6 @@ Rien de bien effrayant, si ?
 ghci> :t cartesianProduct
 cartesianProduct :: Monad m ⇒ m t → m t1 → m (t, t1)
 \end{verbatim}
-
-Ça commence à faire peur...
 
 \end{frame}
 
