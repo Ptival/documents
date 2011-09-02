@@ -131,13 +131,19 @@ not :: Bool → Bool
 {Application partielle}
 \begin{verbatim}
 takePositives = takeWhile (> 0)
-
+\end{verbatim}
+\pause
+\begin{verbatim}
 ghci> :t takeWhile
 takeWhile :: (a → Bool) → [a] → [a]
-
+\end{verbatim}
+\pause
+\begin{verbatim}
 ghci> :t takePositives
 takePositives :: [Integer] → [Integer]
-
+\end{verbatim}
+\pause
+\begin{verbatim}
 ghci> takePositives [10, 9..]
 [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 \end{verbatim}
@@ -150,13 +156,22 @@ ghci> takePositives [10, 9..]
 \frametitle{Fonctions anonymes}
 \begin{verbatim}
 squareList = map (\x → x * x)
+\end{verbatim}
+\pause
 
+\begin{verbatim}
 ghci> :t map
 map :: (a → b) → [a] → [b]
+\end{verbatim}
+\pause
 
+\begin{verbatim}
 ghci> :t squareList
 squareList :: [Integer] → [Integer]
+\end{verbatim}
+\pause
 
+\begin{verbatim}
 ghci> squareList [1, 2, 3]
 [1, 4, 9]
 \end{verbatim}
@@ -176,6 +191,7 @@ data List a = | Empty
               | a `Cons` List a
 \end{verbatim}
 \end{block}
+\pause
 \begin{block}
 {Fonctions polymorphes}
 \begin{verbatim}
@@ -206,6 +222,7 @@ ghci> :t show
 show :: Show a ⇒ a → String
 \end{verbatim}
 \end{block}
+\pause
 \begin{block}
 {Constantes surchargées}
 \begin{verbatim}
@@ -213,6 +230,7 @@ ghci> :t 1
 1 :: Num a ⇒ a
 \end{verbatim}
 \end{block}
+\pause
 Surcharge résolue à la compilation !
 \end{frame}
 
@@ -246,7 +264,9 @@ Surcharge résolue à la compilation !
 \begin{verbatim}
 fact 0 = 1                  -- 1 :: Num a => a
 fact n = n * fact (n-1)     -- (*) :: Num a => a -> a -> a
-
+\end{verbatim}
+\pause
+\begin{verbatim}
 ghci> :t fact
 fact :: Num a ⇒ a → a
 \end{verbatim}
@@ -272,7 +292,9 @@ class Eq a where
 \begin{verbatim}
 data Color = Red | Green | Blue
     deriving (Eq)
-
+\end{verbatim}
+\pause
+\begin{verbatim}
 instance Read Color where
     read "R" = Red
     read "G" = Green
