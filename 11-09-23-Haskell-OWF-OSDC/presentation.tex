@@ -135,7 +135,7 @@ takePositives = takeWhile (> 0)
 ghci> :t takeWhile
 takeWhile :: (a → Bool) → [a] → [a]
 
-ghci> :t takePos
+ghci> :t takePositives
 takePositives :: [Integer] → [Integer]
 
 ghci> takePositives [10, 9..]
@@ -280,8 +280,8 @@ instance Read Color where
 \end{verbatim}
 \pause
 \begin{verbatim}
-ghci> map read "RGB"
-[Red, Green, Blue]
+ghci> filter (/= Green) $ map read "BRGBBG"
+[Blue, Red, Blue, Blue]
 \end{verbatim}
 \end{frame}
 
@@ -312,7 +312,7 @@ instance Num a => Num [a] where
 Surcharge automatique :
 
 \begin{verbatim}
-ghci> [1, 1] ^ 2
+ghci> [1, 1] ^ 2    -- (x + 1)² = x² + 2*x + 1
 [1, 2, 1]
 \end{verbatim}
 
