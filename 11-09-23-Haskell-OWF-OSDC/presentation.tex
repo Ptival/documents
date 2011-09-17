@@ -10,7 +10,7 @@
 Une introduction à la programmation fonctionnelle pure en Haskell}
 \author{Valentin Robert}
 \institute{INRIA}
-\date{\today}
+\date{23 septembre 2011}
 
 \begin{document}
 
@@ -25,52 +25,28 @@ Une introduction à la programmation fonctionnelle pure en Haskell}
 \begin{frame}
 \frametitle{Qu'est-ce qu'Haskell ?}
 
-\begin{block}
-{Programmation fonctionnelle pure (par défaut)}
 \begin{itemize}
-\item Définitions plus mathématiques qu'opérationnelles
-\item Fonctions d'ordre supérieur
-\item Transparence référentielle
-\end{itemize}
-\end{block}
+
+\item Haskell est fonctionnel
 
 \pause
 
-\begin{block}
-{Évaluation paresseuse}
-\begin{itemize}
-\item Structures de données infinies
-\item Entrées/Sorties paresseuses
-\end{itemize}
-\end{block}
+\item Haskell est paresseux
 
 \pause
 
-\begin{block}
-{Typage statique}
-\begin{itemize}
-\item Types connus à la compilation
-\item Inférence de types
-\item Polymorphisme paramétrique ("templates", "generics", ...)
-\item Polymorphisme ad-hoc ("surcharge")
+\item Haskell est pur
+
+\pause
+
+\item Haskell est d'ordre supérieur
+
+\pause
+
+\item Haskell est typé statiquement (et fortement)
+
 \end{itemize}
-\end{block}
-\end{frame}
 
-
-
-\begin{frame}
-\frametitle{Typage statique}
-\begin{block}
-{Enjeux}
-\begin{itemize}
-\item Détecter les erreurs à la compilation
-\item Sûreté des types
-\item Souplesse, modularité, réutilisabilité
-\item Éviter les faux positifs, les faux négatifs
-\item Opportunités d'optimisation
-\end{itemize}
-\end{block}
 \end{frame}
 
 
@@ -184,26 +160,99 @@ ghci> squareList [1, 2, 3]
 \begin{block}
 {Types de données paramétrés}
 \begin{verbatim}
-data Maybe a = | Nothing
-               | Just a
+data Maybe a = Nothing
+             | Just a
 
-data List a = | Empty
-              | a `Cons` List a
+data [a] = []       -- "nil"
+         | a : [a]  -- "cons"
+
+data Stack w = MkStk [w] [w]
 \end{verbatim}
 \end{block}
 \pause
 \begin{block}
 {Fonctions polymorphes}
 \begin{verbatim}
-ghci> :t Just
-Just :: a → Maybe a
-
-ghci> :t (:)
-(:) :: a → [a] → [a]
+focusPrev :: Stack w → Stack w
+focusPrev (MkStk (l:ls) rs) = MkStk ls (l:rs)
+focusPrev (MkStk []     rs) =
+    case (reverse rs) of
+        (l:ls) → MkStk ls [l]
+        []     → MkStk [] []
 \end{verbatim}
 \end{block}
-Le type est en réalité : \verb|Just :: ∀a. a → Maybe a|
+Le type est en réalité : \verb|focusPrev :: ∀w. Stack w → Stack w|
 \end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Abstraction via les types de données}
+\begin{block}
+{Module fournisseur}
+Export sélectif
+\begin{verbatim}
+module Stack (Stack, focusNext, focusPrev, ...) where
+
+data Stack = ...
+\end{verbatim}
+\end{block}
+\begin{block}
+{Module client}
+\begin{verbatim}
+module Operations(...) where
+
+import Stack (Stack, focusNext) -- import sélectif
+
+f :: Stack w → Stack w         -- OK : Stack est importé
+f (MkStk as bs) = ...           -- NON : MkStk n'est pas importé
+\end{verbatim}
+\end{block}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Besoin de classes de types}
+\begin{verbatim}
+delete :: Stack w → w → Stack w
+\end{verbatim}
+
+\pause
+
+\begin{verbatim}
+delete :: ∀w. Stack w → w → Stack w
+\end{verbatim}
+
+Possible pour TOUT w ?
+
+\pause
+
+Non ! On doit pouvoir tester l'égalité.
+
+\pause
+
+\begin{verbatim}
+sort :: [a] → [a]
+\end{verbatim}
+
+Possible pour TOUT a ?
+
+\pause
+
+Non ! Il doit exister un ordre total sur les a.
+
+\pause
+
+\begin{verbatim}
+square :: n → n
+\end{verbatim}
+
+Devrait marche sur n'importe quel type numérique : Int, Integer, Float, Double,
+Rational, ... (Vector, Matrix ?)
+
+\end{frame}
+
 
 
 
@@ -212,14 +261,11 @@ Le type est en réalité : \verb|Just :: ∀a. a → Maybe a|
 \begin{block}
 {Fonctions surchargées}
 \begin{verbatim}
-ghci> :t (==)
-(==) :: Eq a ⇒ a → a → Bool
+delete :: ∀w. Eq w ⇒ Stack w → w → Stack w
 
-ghci> :t (+)
-(+) :: Num a ⇒ a → a → a
+sort :: Ord a ⇒ [a] → [a]
 
-ghci> :t show
-show :: Show a ⇒ a → String
+square :: Num n ⇒ n → n
 \end{verbatim}
 \end{block}
 \pause
@@ -237,61 +283,15 @@ Surcharge résolue à la compilation !
 
 
 \begin{frame}[fragile]
-\frametitle{Polymorphisme ad-hoc : classes de types}
-\begin{block}
-{Quelques exemples de classes de types de la bibliothèque standard}
-\begin{itemize}
-
-\item Eq : \verb|(==), (/=)|
-
-\item Ord : \verb|(<), (>=), (>), (<=), max, min|
-
-\item Num : \verb|(+), (*), (-), negate, abs, ...|
-
-\item Show : \verb|show :: a → String, ...|
-
-\item Read : \verb|read :: String → a, ...|
-
-\end{itemize}
-\end{block}
-\end{frame}
-
-
-
-\begin{frame}[fragile]
-\frametitle{Inférence de types}
-
-\begin{verbatim}
-fact 0 = 1                  -- 1 :: Num a => a
-fact n = n * fact (n-1)     -- (*) :: Num a => a -> a -> a
-\end{verbatim}
-\pause
-\begin{verbatim}
-ghci> :t fact
-fact :: Num a ⇒ a → a
-\end{verbatim}
-
-Haskell infère le type le plus général !
-\end{frame}
-
-
-
-\begin{frame}[fragile]
-\frametitle{Déclaration d'une classe de type et d'instances de la classe}
-\begin{verbatim}
-class Eq a where
-    (==) :: a → a → Bool
-    (/=) :: a → a → Bool
-\end{verbatim}
-\pause
-\begin{verbatim}
-    x == y = not (x /= y)
-    x /= y = not (x == y)
-\end{verbatim}
-\pause
+\frametitle{Classes de types et instances}
 \begin{verbatim}
 data Color = Red | Green | Blue
     deriving (Eq)
+\end{verbatim}
+
+\begin{verbatim}
+class Read a where
+    read :: a → String
 \end{verbatim}
 \pause
 \begin{verbatim}
@@ -309,6 +309,21 @@ ghci> filter (/= Green) $ map read "BRGBBG"
 
 
 
+\begin{frame}[fragile]
+\frametitle{Construire de plus grandes instances}
+\begin{verbatim}
+class Eq a where
+    (==) :: a → a → Bool
+
+instance Eq a => Eq [a] where
+    (==) []     []      = True
+    (==) (x:xs) (y:ys)  = x==y && xs==ys
+    (==) _      _       = False
+\end{verbatim}
+\end{frame}
+
+
+
 
 \begin{frame}[fragile]
 \frametitle{Classes de types en action}
@@ -316,7 +331,7 @@ ghci> filter (/= Green) $ map read "BRGBBG"
 \verb|[1, 2, 3]| représente \verb|3*x² + 2*x + 1|
 
 \begin{verbatim}
-instance Num a => Num [a] where
+instance Num a ⇒ Num [a] where
     (f:fs) + (g:gs) = f+g : fs+gs
     fs + [] = fs
     [] + gs = gs
@@ -347,6 +362,24 @@ ghci> (read "x + 1" :: [a]) ^ 2
 x^2 + 2*x + 1
 \end{verbatim}
 
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Inférence de types}
+
+\begin{verbatim}
+fact 0 = 1                  -- 1 :: Num a ⇒ a
+fact n = n * fact (n-1)     -- (*) :: Num a ⇒ a → a → a
+\end{verbatim}
+\pause
+\begin{verbatim}
+ghci> :t fact
+fact :: Num a ⇒ a → a
+\end{verbatim}
+
+Haskell infère le type le plus général !
 \end{frame}
 
 
@@ -387,7 +420,7 @@ Avec I/O, pas de transparence référentielle, tout tombe à l'eau !
 
 \pause
 
-\verb|data IO a = RealWorld -> (a, RealWorld)|
+\verb|data IO a = RealWorld → (a, RealWorld)|
 
 \end{block}
 
@@ -455,11 +488,11 @@ printFile :: IO ()
 Rappel : \verb|(>>=) :: Monad m ⇒ m a → (a → m b) → m b|
 
 \begin{verbatim}
-main = getLine                    >>= (\fileName ->
-       doesFileExist fileName     >>= (\fileExists ->
+main = getLine                    >>= (\fileName →
+       doesFileExist fileName     >>= (\fileExists →
        if fileExists
        then (
-                readFile fileName >>= (\fileContents ->
+                readFile fileName >>= (\fileContents →
                 putStrLn fileContents)
             )
        else putStrLn "File not found!"))
@@ -521,13 +554,15 @@ main = forever $ do input <- performInput
                     performOutput output
 \end{verbatim}
 
-\verb|main :: IO ()| est une action composée par des sous-actions.
+\begin{verbatim}
+main :: IO ()
 
-\verb|performInput :: IO a|
+performInput :: IO a
 
-\verb|transform :: a → b| est une transformation pure !
+transform :: a → b
 
-\verb|performOutput :: b → IO ()|
+performOutput :: b → IO ()
+\end{verbatim}
 
 \pause
 
@@ -535,8 +570,6 @@ main = forever $ do input <- performInput
 forever :: (Monad m) ⇒ m a → m b
 forever a = a >> forever a
 \end{verbatim}
-
-Drôle de bête !
 
 \end{frame}
 
@@ -564,8 +597,138 @@ Fh0iXXïZìæ
 
 
 
+\begin{frame}[fragile]
+\frametitle{Les fonctions pures sont simples à tester !}
+\begin{block}{Code}
+\begin{verbatim}
+focusPrev :: Stack w -> Stack w
+
+focusNext :: Stack w -> Stack w
+\end{verbatim}
+\end{block}
+\pause
+\begin{block}{Propriétés}
+\begin{verbatim}
+prop_focus :: Stack w -> Bool
+prop_focus s = s == focusNext . focusPrev $ s
+--          ou (s == (focusNext (focusPrev s)))
+--          si vous aimez les parenthèses...
+\end{verbatim}
+\end{block}
+\end{frame}
+
+
+
+
+\begin{frame}[fragile]
+\frametitle{Quickcheck en une poignée de lignes !}
+
+\begin{block}{Code}
+\begin{verbatim}
+quickCheck :: Testable a => a -> IO ()
+
+class Testable a where
+    test :: a -> RandSupply -> Bool
+
+class Arbitrary a where
+    arby :: RandSupply -> a
+
+instance Testable Bool where
+    test b r = b
+
+instance (Arbitrary a, Testable b) => Testable (a -> b) where
+    test f r = test (f (arby r1)) r2
+        where (r1, r2) = split r
+\end{verbatim}
+\end{block}
+
+\begin{verbatim}
+> quickCheck prop_focus
+OK, passed 100 tests.
+\end{verbatim}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Instance de Quickcheck}
+\begin{block}{Implémentation}
+\begin{verbatim}
+instance Arbitrary Int where
+    arby r = randInt r
+
+instance Arbitrary a => Arbitrary [a] where
+    arby r | even r1   = []
+           | otherwise = arby r2 : arby r3
+        where (r1, r') = split r
+              (r2, r3) = split r'
+
+instance Arbitrary a => Arbitrary (Stack a) where
+    arby r = MkStk (arby r1) (arby r2)
+        where (r1, r2) = split r
+
+split :: RandSupply -> (RandSupply, RandSupply)
+\end{verbatim}
+\end{block}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Scripter en Haskell}
+\begin{block}{Partie impure}
+\begin{verbatim}
+main :: IO ()
+main = do as <- getArgs
+          mapM_ process as
+
+process :: String -> IO ()
+process file =
+  do cts <- readFile file
+     let tests = getTests cts
+     if null tests then
+       putStrLn (file ++ ": no properties to check")
+     else do
+       writeFile "script" $
+         unlines ([":l " ++ file] ++ concatMap makeTest tests)
+       system ("ghci -v0 < script")
+       return ()
+\end{verbatim}
+\end{block}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Scripter en Haskell}
+\begin{block}{Partie pure}
+\begin{verbatim}
+getTests :: String -> [String]
+getTests cts = nub
+               . filter ("prop_" `isPrefixOf`)
+               . map (fst . head . lex)
+               $ lines cts
+
+makeTest :: String -> [String]
+makeTest test = ["putStr \"" ++ test ++ ": \"", “quickCheck " ++
+                  test]
+\end{verbatim}
+\end{block}
+\end{frame}
+
+
+
 \begin{frame}
-\centerline{Question time!}
+\centerline{Merci de votre attention, place aux questions !}
+
+\begin{figure}
+\includegraphics[scale=0.4]{haskell_fr_logo.png}
+\end{figure}
+
+\centerline{Nouveau ! \url{http://haskell.fr}}
+
+\centerline{Nouveau ! \url{http://lyah.haskell.fr}}
 \end{frame}
 
 
