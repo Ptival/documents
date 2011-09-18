@@ -150,8 +150,8 @@ focusPrev :: Stack w → Stack w
 focusPrev (MkStk (l:ls) rs) = MkStk ls (l:rs)
 focusPrev (MkStk []     rs) =
     case (reverse rs) of
-        (l:ls) → MkStk ls [l]
-        []     → MkStk [] []
+        (l:ls) -> MkStk ls [l]
+        []     -> MkStk [] []
 \end{verbatim}
 \end{block}
 Le type est en réalité : \verb|focusPrev :: ∀w. Stack w → Stack w|
@@ -163,23 +163,28 @@ Le type est en réalité : \verb|focusPrev :: ∀w. Stack w → Stack w|
 \frametitle{Abstraction via les types de données}
 \begin{block}
 {Module fournisseur}
-Export sélectif
 \begin{verbatim}
 module Stack (Stack, focusNext, focusPrev, ...) where
 
-data Stack = ...
+data Stack a = MkStk [a] [a]
+
+focusNext = ...
+
+focusPrev = ...
 \end{verbatim}
 \end{block}
+\pause
 \begin{block}
 {Module client}
 \begin{verbatim}
 module Operations(...) where
 
-import Stack (Stack, focusNext) -- import sélectif
-
-f :: Stack w → Stack w         -- OK : Stack est importé
-f (MkStk as bs) = ...           -- NON : MkStk n'est pas importé
+import Stack (Stack, focusNext)
 \end{verbatim}
+\pause
+\verb|f :: Stack w → Stack w  -- OK|
+\pause
+\verb|f (MkStk as bs) = ...   -- KO|
 \end{block}
 \end{frame}
 
@@ -250,6 +255,14 @@ ghci> :t 1
 \end{verbatim}
 \end{block}
 \pause
+\begin{block}
+{Surcharge sur le type de retour}
+\begin{verbatim}
+ghci> :t read
+read :: Read a ⇒ String → a
+\end{verbatim}
+\end{block}
+\pause
 Surcharge résolue à la compilation !
 \end{frame}
 
@@ -288,7 +301,7 @@ ghci> filter (/= Green) $ map read "BRGBBG"
 class Eq a where
     (==) :: a → a → Bool
 
-instance Eq a => Eq [a] where
+instance Eq a ⇒ Eq [a] where
     (==) []     []      = True
     (==) (x:xs) (y:ys)  = x==y && xs==ys
     (==) _      _       = False
@@ -574,15 +587,15 @@ Fh0iXXïZìæ
 \frametitle{Les fonctions pures sont simples à tester !}
 \begin{block}{Code}
 \begin{verbatim}
-focusPrev :: Stack w -> Stack w
+focusPrev :: Stack w → Stack w
 
-focusNext :: Stack w -> Stack w
+focusNext :: Stack w → Stack w
 \end{verbatim}
 \end{block}
 \pause
 \begin{block}{Propriétés}
 \begin{verbatim}
-prop_focus :: Stack w -> Bool
+prop_focus :: Stack w → Bool
 prop_focus s = s == focusNext . focusPrev $ s
 --          ou (s == (focusNext (focusPrev s)))
 --          si vous aimez les parenthèses...
@@ -598,18 +611,18 @@ prop_focus s = s == focusNext . focusPrev $ s
 
 \begin{block}{Code}
 \begin{verbatim}
-quickCheck :: Testable a => a -> IO ()
+quickCheck :: Testable a ⇒ a → IO ()
 
 class Testable a where
-    test :: a -> RandSupply -> Bool
+    test :: a → RandSupply → Bool
 
 class Arbitrary a where
-    arby :: RandSupply -> a
+    arby :: RandSupply → a
 
 instance Testable Bool where
     test b r = b
 
-instance (Arbitrary a, Testable b) => Testable (a -> b) where
+instance (Arbitrary a, Testable b) ⇒ Testable (a → b) where
     test f r = test (f (arby r1)) r2
         where (r1, r2) = split r
 \end{verbatim}
@@ -631,17 +644,17 @@ OK, passed 100 tests.
 instance Arbitrary Int where
     arby r = randInt r
 
-instance Arbitrary a => Arbitrary [a] where
+instance Arbitrary a ⇒ Arbitrary [a] where
     arby r | even r1   = []
            | otherwise = arby r2 : arby r3
         where (r1, r') = split r
               (r2, r3) = split r'
 
-instance Arbitrary a => Arbitrary (Stack a) where
+instance Arbitrary a ⇒ Arbitrary (Stack a) where
     arby r = MkStk (arby r1) (arby r2)
         where (r1, r2) = split r
 
-split :: RandSupply -> (RandSupply, RandSupply)
+split :: RandSupply → (RandSupply, RandSupply)
 \end{verbatim}
 \end{block}
 \end{frame}
@@ -656,7 +669,7 @@ main :: IO ()
 main = do as <- getArgs
           mapM_ process as
 
-process :: String -> IO ()
+process :: String → IO ()
 process file =
   do cts <- readFile file
      let tests = getTests cts
@@ -677,13 +690,13 @@ process file =
 \frametitle{Scripter en Haskell}
 \begin{block}{Partie pure}
 \begin{verbatim}
-getTests :: String -> [String]
+getTests :: String → [String]
 getTests cts = nub
                . filter ("prop_" `isPrefixOf`)
                . map (fst . head . lex)
                $ lines cts
 
-makeTest :: String -> [String]
+makeTest :: String → [String]
 makeTest test = ["putStr \"" ++ test ++ ": \"", “quickCheck " ++
                   test]
 \end{verbatim}
