@@ -129,33 +129,6 @@ ghci> takePositives [10, 9..]
 
 
 \begin{frame}[fragile]
-\frametitle{Fonctions anonymes}
-\begin{verbatim}
-squareList = map (\x → x * x)
-\end{verbatim}
-\pause
-
-\begin{verbatim}
-ghci> :t map
-map :: (a → b) → [a] → [b]
-\end{verbatim}
-\pause
-
-\begin{verbatim}
-ghci> :t squareList
-squareList :: [Integer] → [Integer]
-\end{verbatim}
-\pause
-
-\begin{verbatim}
-ghci> squareList [1, 2, 3]
-[1, 4, 9]
-\end{verbatim}
-\end{frame}
-
-
-
-\begin{frame}[fragile]
 \frametitle{Polymorphisme paramétrique}
 \begin{block}
 {Types de données paramétrés}
