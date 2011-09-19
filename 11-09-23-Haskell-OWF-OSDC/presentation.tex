@@ -53,35 +53,13 @@ Une introduction à la programmation fonctionnelle pure en Haskell}
 
 \begin{frame}[fragile]
 \frametitle{Typage statique}
-En Haskell toutes les valeurs sont typées.
 \begin{verbatim}
-ghci> :t 'a'
 'a' :: Char
 
-ghci> :t True
-True :: Bool
-
-ghci> :t "HELLO!"
 "HELLO!" :: [Char]
 
-ghci> :t 4 == 5
-4 == 5 :: Bool
-\end{verbatim}
-\end{frame}
-
-
-
-\begin{frame}[fragile]
-\frametitle{Typage statique}
-Les fonctions (et opérateurs) sont aussi des valeurs !
-\begin{verbatim}
-:t isAscii
 isAscii :: Char → Bool
 
-:t not
-not :: Bool → Bool
-
-:t (&&)
 (&&) :: Bool → Bool → Bool
 \end{verbatim}
 \end{frame}
@@ -110,12 +88,10 @@ takePositives = takeWhile (> 0)
 \end{verbatim}
 \pause
 \begin{verbatim}
-ghci> :t takeWhile
 takeWhile :: (a → Bool) → [a] → [a]
 \end{verbatim}
 \pause
 \begin{verbatim}
-ghci> :t takePositives
 takePositives :: [Integer] → [Integer]
 \end{verbatim}
 \pause
@@ -150,8 +126,8 @@ focusPrev :: Stack w → Stack w
 focusPrev (MkStk (l:ls) rs) = MkStk ls (l:rs)
 focusPrev (MkStk []     rs) =
     case (reverse rs) of
-        (l:ls) -> MkStk ls [l]
-        []     -> MkStk [] []
+        (l:ls) → MkStk ls [l]
+        []     → MkStk [] []
 \end{verbatim}
 \end{block}
 Le type est en réalité : \verb|focusPrev :: ∀w. Stack w → Stack w|
@@ -254,7 +230,6 @@ square :: Num n ⇒ n → n
 \begin{block}
 {Constantes surchargées}
 \begin{verbatim}
-ghci> :t 1
 1 :: Num a ⇒ a
 \end{verbatim}
 \end{block}
@@ -262,7 +237,6 @@ ghci> :t 1
 \begin{block}
 {Surcharge sur le type de retour}
 \begin{verbatim}
-ghci> :t read
 read :: Read a ⇒ String → a
 \end{verbatim}
 \end{block}
@@ -314,48 +288,6 @@ instance Eq a ⇒ Eq [a] where
 
 
 
-
-\begin{frame}[fragile]
-\frametitle{Classes de types en action}
-
-\verb|[1, 2, 3]| représente \verb|3*x² + 2*x + 1|
-
-\begin{verbatim}
-instance Num a ⇒ Num [a] where
-    (f:fs) + (g:gs) = f+g : fs+gs
-    fs + [] = fs
-    [] + gs = gs
-\end{verbatim}
-\pause
-\begin{verbatim}
-    (f:fs) * (g:gs) = f*g : [f]*gs + fs*(g:gs)
-    _ * _ = []
-\end{verbatim}
-\pause
-\begin{verbatim}
-    ...
-\end{verbatim}
-
-Surcharge automatique :
-
-\begin{verbatim}
-ghci> [1, 1] ^ 2    -- (x + 1)² = x² + 2*x + 1
-[1, 2, 1]
-\end{verbatim}
-
-\pause
-
-Voire :
-
-\begin{verbatim}
-ghci> (read "x + 1" :: [a]) ^ 2
-x^2 + 2*x + 1
-\end{verbatim}
-
-\end{frame}
-
-
-
 \begin{frame}[fragile]
 \frametitle{Inférence de types}
 
@@ -365,7 +297,6 @@ fact n = n * fact (n-1)     -- (*) :: Num a ⇒ a → a → a
 \end{verbatim}
 \pause
 \begin{verbatim}
-ghci> :t fact
 fact :: Num a ⇒ a → a
 \end{verbatim}
 
@@ -406,38 +337,42 @@ Sans I/O, pas d'effets, que des maths !
 
 \pause
 
-Avec I/O, pas de transparence référentielle, tout tombe à l'eau !
+Idée : \verb|putStr :: String → ()|
 
 \pause
 
-\verb|data IO a = RealWorld → (a, RealWorld)|
+Problème : \verb|swap :: Stack w → Stack w|
+
+\pause
+
+Problème : \verb|[putStr "oui", putStr "non"]|
+
+\pause
+
+Solution : actions IO, i.e. valeurs de type \verb|IO t|
+
+\pause
+
+\verb|type IO a = RealWorld → (a, RealWorld)|
 
 \end{block}
 
 \pause
 
 \begin{block}
-{Sûreté ?}
+{Manipuler les IO}
 
 \begin{itemize}
 
-\item Non forgeable
+\item Valeurs marquées (aucune fonction n'a pour type \verb|IO a → a|).
 
 \pause
 
-\item Inlavable (aucune fonction n'a pour type \verb|IO a → a|).
-
-\pause
-
-\item Mais composable ! \verb|(>>=) :: IO a → (a → IO b) → IO b|.
+\item mais composables ! \verb|(>>=) :: IO a → (a → IO b) → IO b|.
 
 \end{itemize}
 
-IO un jour, IO toujours.
-
 \end{block}
-
-\verb|main :: IO ()|
 
 \end{frame}
 
@@ -446,26 +381,21 @@ IO un jour, IO toujours.
 \begin{frame}[fragile]
 \frametitle{Les actions IO}
 \begin{verbatim}
-ghci> :t (>>=)
 (>>=) :: Monad m ⇒ m a → (a → m b) → m b
 -- Pensez plutôt à IO a → (a → IO b) → IO b
 \end{verbatim}
 \pause
 \begin{verbatim}
-ghci> :t getLine
 getLine :: IO String
 
-ghci> :t readFile
 readFile :: String → IO String
 
-ghci> :t putStr
 putStr :: String → IO ()
 \end{verbatim}
 \pause
 \begin{verbatim}
 printFile = getLine >>= readFile >>= putStr
 
-ghci> :t printFile
 printFile :: IO ()
 \end{verbatim}
 \end{frame}
@@ -528,7 +458,6 @@ cartesianProduct' l1 l2 = [(x, y) | x <- l1, y <- l2]
 \pause
 
 \begin{verbatim}
-ghci> :t cartesianProduct
 cartesianProduct :: Monad m ⇒ m t → m t1 → m (t, t1)
 \end{verbatim}
 
@@ -710,7 +639,7 @@ makeTest test = ["putStr \"" ++ test ++ ": \"", “quickCheck " ++
 
 
 \begin{frame}
-\centerline{Merci de votre attention, place aux questions !}
+\centerline{Merci de votre présence et attention !}
 
 \begin{figure}
 \includegraphics[scale=0.4]{haskell_fr_logo.png}
