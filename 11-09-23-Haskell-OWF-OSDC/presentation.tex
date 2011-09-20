@@ -583,7 +583,7 @@ instance Arbitrary a ⇒ Arbitrary [a] where
         where (r1, r') = split r
               (r2, r3) = split r'
 
-instance Arbitrary a ⇒ Arbitrary (Stack a) where
+instance Arbitrary [a] ⇒ Arbitrary (Stack a) where
     arby r = MkStk (arby r1) (arby r2)
         where (r1, r2) = split r
 
