@@ -53,6 +53,9 @@ Une introduction à la programmation fonctionnelle pure en Haskell}
 
 \begin{frame}[fragile]
 \frametitle{Typage statique}
+
+Toutes les valeurs sont typées.
+
 \begin{verbatim}
 'a' :: Char
 
@@ -289,55 +292,15 @@ instance Eq a ⇒ Eq [a] where
 
 
 \begin{frame}[fragile]
-\frametitle{Inférence de types}
-
-\begin{verbatim}
-fact 0 = 1                  -- 1 :: Num a ⇒ a
-fact n = n * fact (n-1)     -- (*) :: Num a ⇒ a → a → a
-\end{verbatim}
-\pause
-\begin{verbatim}
-fact :: Num a ⇒ a → a
-\end{verbatim}
-
-Haskell infère le type le plus général !
-\end{frame}
-
-
-
-\begin{frame}[fragile]
-\frametitle{Polymorphisme d'ordre supérieur}
-\begin{verbatim}
-class Functor f where
-    fmap :: (a → b) → f a → f b
-\end{verbatim}
-\pause
-\verb|f| n'est pas un type, mais un constructeur de types !
-\pause
-\begin{verbatim}
-instance Functor [] where
-    fmap = map
-\end{verbatim}
-\pause
-\begin{verbatim}
-instance Functor Maybe where
-    fmap f (Just x) = Just (f x)
-    fmap f Nothing = Nothing
-\end{verbatim}
-\end{frame}
-
-
-
-\begin{frame}[fragile]
 \frametitle{Les actions IO}
 \begin{block}
-{Contraindre les effets de bord hors du royaume de la pureté}
+{Problème}
 
 Sans I/O, pas d'effets, que des maths !
 
 \pause
 
-Idée : \verb|putStr :: String → ()|
+\verb|putStr :: String → ()|
 
 \pause
 
@@ -347,13 +310,18 @@ Problème : \verb|swap :: Stack w → Stack w|
 
 Problème : \verb|[putStr "oui", putStr "non"]|
 
-\pause
-
-Solution : actions IO, i.e. valeurs de type \verb|IO t|
+\end{block}
 
 \pause
 
-\verb|type IO a = RealWorld → (a, RealWorld)|
+\begin{block}
+{Solution}
+
+Actions IO, i.e. valeurs de type \verb|IO t|
+
+\verb|putStr :: String → IO ()|
+
+\verb|getLine :: IO String|
 
 \end{block}
 
@@ -395,6 +363,7 @@ putStr :: String → IO ()
 \pause
 \begin{verbatim}
 printFile = getLine >>= readFile >>= putStr
+-- Un tube Unix typé !?
 
 printFile :: IO ()
 \end{verbatim}
