@@ -9,7 +9,7 @@
 \title[Haskell]{Être paresseux avec classe\\
 Une introduction à la programmation fonctionnelle pure en Haskell}
 \author{Valentin Robert}
-\institute{INRIA}
+\institute{ENSEIRB / UCSD / INRIA}
 \date{23 septembre 2011}
 
 \begin{document}
@@ -60,7 +60,11 @@ Toutes les valeurs sont typées.
 'a' :: Char
 
 "HELLO!" :: [Char]
+\end{verbatim}
 
+\pause
+
+\begin{verbatim}
 isAscii :: Char → Bool
 
 (&&) :: Bool → Bool → Bool
@@ -139,48 +143,11 @@ Le type est en réalité : \verb|focusPrev :: ∀w. Stack w → Stack w|
 
 
 \begin{frame}[fragile]
-\frametitle{Abstraction via les types de données}
-\begin{block}
-{Module fournisseur}
-\begin{verbatim}
-module Stack (Stack, focusNext, focusPrev, ...) where
-
-data Stack a = MkStk [a] [a]
-
-focusNext = ...
-
-focusPrev = ...
-\end{verbatim}
-\end{block}
-\pause
-\begin{block}
-{Module client}
-\begin{verbatim}
-module Operations(...) where
-
-import Stack (Stack, focusNext)
-\end{verbatim}
-\pause
-
-\verb|f :: Stack w → Stack w  -- OK|
-
-\pause
-
-\verb|f (MkStk as bs) = ...   -- KO|
-
-\end{block}
-\end{frame}
-
-
-
-\begin{frame}[fragile]
 \frametitle{Besoin de classes de types}
 \begin{verbatim}
 delete :: Stack w → w → Stack w
 \end{verbatim}
-
 \pause
-
 \begin{verbatim}
 delete :: ∀w. Stack w → w → Stack w
 \end{verbatim}
@@ -269,7 +236,7 @@ instance Read Color where
 \end{verbatim}
 \pause
 \begin{verbatim}
-ghci> filter (/= Green) $ map read "BRGBBG"
+ghci> filter (/= Green) . map (read . return) $ "BRGBBG"
 [Blue, Red, Blue, Blue]
 \end{verbatim}
 \end{frame}
@@ -291,6 +258,93 @@ instance Eq a ⇒ Eq [a] where
 
 
 
+
+\begin{frame}[fragile]
+\frametitle{Les fonctions pures sont simples à tester !}
+\begin{block}{Code}
+\begin{verbatim}
+focusPrev :: Stack w → Stack w
+
+focusNext :: Stack w → Stack w
+\end{verbatim}
+\end{block}
+\pause
+\begin{block}{Propriétés}
+\begin{verbatim}
+prop_focus :: Stack w → Bool
+prop_focus s = s == focusNext $ focusPrev s
+--          ou (s == focusNext (focusPrev s))
+--          si vous aimez les parenthèses...
+\end{verbatim}
+\end{block}
+\end{frame}
+
+
+
+
+\begin{frame}[fragile]
+\frametitle{Quickcheck en une poignée de lignes !}
+
+\begin{block}{Code}
+\begin{verbatim}
+quickCheck :: Testable a ⇒ a → IO ()
+
+class Testable a where
+    test :: a → RandSupply → Bool
+\end{verbatim}
+
+\pause
+
+\begin{verbatim}
+instance Testable Bool where
+    test b r = b
+
+instance (Arbitrary a, Testable b) ⇒ Testable (a → b) where
+    test f r = test (f (arby r1)) r2
+        where (r1, r2) = split r
+\end{verbatim}
+
+\pause
+
+\begin{verbatim}
+class Arbitrary a where
+    arby :: RandSupply → a
+\end{verbatim}
+\end{block}
+
+\begin{verbatim}
+> quickCheck prop_focus
+OK, passed 100 tests.
+\end{verbatim}
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+\frametitle{Instance de Quickcheck}
+\begin{block}{Implémentation}
+\begin{verbatim}
+instance Arbitrary Int where
+    arby r = randInt r
+
+instance Arbitrary a ⇒ Arbitrary [a] where
+    arby r | even r1   = []
+           | otherwise = arby r2 : arby r3
+        where (r1, r') = split r
+              (r2, r3) = split r'
+
+instance Arbitrary [a] ⇒ Arbitrary (Stack a) where
+    arby r = MkStk (arby r1) (arby r2)
+        where (r1, r2) = split r
+
+split :: RandSupply → (RandSupply, RandSupply)
+\end{verbatim}
+\end{block}
+\end{frame}
+
+
+
 \begin{frame}[fragile]
 \frametitle{Les actions IO}
 \begin{block}
@@ -304,11 +358,11 @@ Sans I/O, pas d'effets, que des maths !
 
 \pause
 
-Problème : \verb|swap :: Stack w → Stack w|
+\verb|swap :: Stack w → Stack w|
 
 \pause
 
-Problème : \verb|[putStr "oui", putStr "non"]|
+\verb|[putStr "oui", putStr "non"]|
 
 \end{block}
 
@@ -481,84 +535,6 @@ ZwBÛAãÅWóÕ
 ghci> main
 Fh0iXXïZìæ
 \end{verbatim}
-\end{frame}
-
-
-
-\begin{frame}[fragile]
-\frametitle{Les fonctions pures sont simples à tester !}
-\begin{block}{Code}
-\begin{verbatim}
-focusPrev :: Stack w → Stack w
-
-focusNext :: Stack w → Stack w
-\end{verbatim}
-\end{block}
-\pause
-\begin{block}{Propriétés}
-\begin{verbatim}
-prop_focus :: Stack w → Bool
-prop_focus s = s == focusNext . focusPrev $ s
---          ou (s == (focusNext (focusPrev s)))
---          si vous aimez les parenthèses...
-\end{verbatim}
-\end{block}
-\end{frame}
-
-
-
-
-\begin{frame}[fragile]
-\frametitle{Quickcheck en une poignée de lignes !}
-
-\begin{block}{Code}
-\begin{verbatim}
-quickCheck :: Testable a ⇒ a → IO ()
-
-class Testable a where
-    test :: a → RandSupply → Bool
-
-class Arbitrary a where
-    arby :: RandSupply → a
-
-instance Testable Bool where
-    test b r = b
-
-instance (Arbitrary a, Testable b) ⇒ Testable (a → b) where
-    test f r = test (f (arby r1)) r2
-        where (r1, r2) = split r
-\end{verbatim}
-\end{block}
-
-\begin{verbatim}
-> quickCheck prop_focus
-OK, passed 100 tests.
-\end{verbatim}
-
-\end{frame}
-
-
-
-\begin{frame}[fragile]
-\frametitle{Instance de Quickcheck}
-\begin{block}{Implémentation}
-\begin{verbatim}
-instance Arbitrary Int where
-    arby r = randInt r
-
-instance Arbitrary a ⇒ Arbitrary [a] where
-    arby r | even r1   = []
-           | otherwise = arby r2 : arby r3
-        where (r1, r') = split r
-              (r2, r3) = split r'
-
-instance Arbitrary [a] ⇒ Arbitrary (Stack a) where
-    arby r = MkStk (arby r1) (arby r2)
-        where (r1, r2) = split r
-
-split :: RandSupply → (RandSupply, RandSupply)
-\end{verbatim}
-\end{block}
 \end{frame}
 
 
