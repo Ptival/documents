@@ -165,8 +165,9 @@ quicksort (p:xs) = (quicksort lesser) ++ [p] ++ (quicksort greater)
 
 \begin{verbatim}
 main = do dirsElts <- getDirectoryContents "."
-          print (quicksort dirElts)
-          print (quicksort dirElts) -- pas besoin de recalculer !
+          let sortedDirs = quicksort dirElts
+          print sortedDirs
+          print sortedDirs -- pas besoin de recalculer !
 \end{verbatim}
 
 \end{frame}
