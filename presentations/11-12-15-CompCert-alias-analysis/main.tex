@@ -1,0 +1,11 @@
+\begin{minted}[frame=single, linenos, fontsize=\footnotesize]{c}
+int main() {
+  int a, b, s0, s4, s8, *px, *py, *pz;
+  px = &s0; py = &s4; pz = &s8;
+  s8 = 42;
+  a = 2 * s0 + 23;
+  *py = 0;
+  b = 2 * s0 + s8;
+  return b;
+}
+\end{minted}

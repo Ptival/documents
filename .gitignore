@@ -9,3 +9,8 @@
 *.pyg
 *.pdf
 *.toc
+*.bbl
+*.blg
+*.nav
+*.snm
+*.vrb
