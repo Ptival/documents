@@ -1,0 +1,11 @@
+*.aux
+*.*float
+*.glo
+*.ist
+*.lof
+*.log
+*.lot
+*.out
+*.pyg
+*.pdf
+*.toc
