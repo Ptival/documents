@@ -790,8 +790,8 @@ définie pour chaque opération du graphe de flot de contrôle ainsi~:
 \F{Iload(chunk, addr, args, dst, succ)}(r, m) &=
 \begin{cases}
 (r \lubR [\mi{dst} \mapsto
-{\LUBM\limits_{\substack{x \in \At{addr}(\mi{args}, r)}}}
-(m(x))], m) & \text{si } chunk = Mint32
+{\LUBS\limits_{\substack{x \in \At{addr}(\mi{args}, r)}}}
+m(x)], m) & \text{si } chunk = Mint32
 \\
 (r, m) & \text{sinon}
 \end{cases}
@@ -799,7 +799,7 @@ définie pour chaque opération du graphe de flot de contrôle ainsi~:
 \F{Istore(chunk, addr, args, src, succ)}(r, m) &=
 \begin{cases}
 (r, m \lubM (
-\LUBS\limits_{\substack{\mi{dst} \in @_{addr}(\mi{args}, r)}}
+\LUBM\limits_{\substack{\mi{dst} \in @_{addr}(\mi{args}, r)}}
 [\mi{dst} \mapsto r(\mi{src})]))
 & \text{si } chunk = Mint32
 \\
